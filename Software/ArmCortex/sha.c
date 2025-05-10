@@ -403,14 +403,14 @@ void KeccakP1600_ExtractBytes(const KeccakP1600_plain32_state *state, unsigned c
 void KeccakP1600_Permute_Nrounds(KeccakP1600_plain32_state *state, unsigned int nrounds)
 {
     {
-        uint8_t stateAsBytes[1600/8];
-        KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
+        //uint8_t stateAsBytes[1600/8];
+        //KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
         //displayStateAsBytes("Input of permutation", stateAsBytes, 1600);
     }
     KeccakP1600_PermutationOnWords(state->A, nrounds);
     {
-        uint8_t stateAsBytes[1600/8];
-        KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
+        //uint8_t stateAsBytes[1600/8];
+        //KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
         //displayStateAsBytes("State after permutation", stateAsBytes, 1600);
     }
 }
@@ -419,14 +419,14 @@ void KeccakP1600_Permute_Nrounds(KeccakP1600_plain32_state *state, unsigned int 
 void KeccakP1600_Permute_12rounds(KeccakP1600_plain32_state *state)
 {
     {
-        uint8_t stateAsBytes[1600/8];
-        KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
+        //uint8_t stateAsBytes[1600/8];
+        //KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
         //displayStateAsBytes("Input of permutation", stateAsBytes, 1600);
     }
     KeccakP1600_PermutationOnWords(state->A, 12);
     {
-        uint8_t stateAsBytes[1600/8];
-        KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
+        //uint8_t stateAsBytes[1600/8];
+        //KeccakP1600_ExtractBytes(state, stateAsBytes, 0, 1600/8);
         //displayStateAsBytes("State after permutation", stateAsBytes, 1600);
     }
 }
@@ -713,7 +713,8 @@ int SpongeAbsorb32(SpongeInstance32 *instance, const unsigned char *data, size_t
 int SpongeAbsorbLastFewBits32(SpongeInstance32 *instance, unsigned char delimitedData)
 {
     unsigned int rateInBytes = instance->rate/8;
-	  unsigned char delimitedData1[1];
+	  unsigned char delimitedData1[1]={0};
+	  //displayBytes("delimitedData)", &delimitedData, 1);
     if (delimitedData == 0)
         return 1;
     if (instance->squeezing)
@@ -786,11 +787,12 @@ void sha3_function32(unsigned char *message, unsigned int messageLength, unsigne
     unsigned char *messageWithSuffix;
     unsigned int messageLengthWithSuffix;
 	  messageWithSuffix = malloc((messageLength+15)/8);
+	  //xil_printf("messageLength %d -> (messageLength+15/8) %d \n\r", messageLength, (messageLength+15)/8);
+		memset(messageWithSuffix, 0, (messageLength+15)/8);
+	  //displayBytes("messageWithSuffix CLEAN", messageWithSuffix, (messageLength+15)/8);
+	  //displayBytes("delimitedSuffix", &delimitedSuffix, 1);
     messageLengthWithSuffix = appendSuffixToMessage(messageWithSuffix, message, messageLength, delimitedSuffix);
-		if (rate + capacity != 1600)
-			return;
-		if ((rate <= 0) || (rate > 1600) || (rate%8) != 0)
-			return;
+	  //displayBytes("messageLengthWithSuffix", messageWithSuffix, messageLengthWithSuffix);
 		KeccakP1600_StaticInitialize();
 		KeccakP1600_Initialize(sponge.state);
 		sponge.rate = rate;
@@ -842,9 +844,19 @@ int padding(unsigned char *Msg, unsigned int messageLength, uint32_t *sha3_data)
 	  size_t i;
 	  unsigned int bytecount;
     int index;
-	  unsigned char delimitedData;
+		unsigned char delimitedData;
+	  unsigned char delimitedData1[1]={0};
     unsigned int rateInBytes;
 	  messageWithSuffix = malloc((messageLength+15)/8);
+	  //xil_printf("messageLength %d -> (messageLength+15/8) %d \n\r", messageLength, (messageLength+15)/8);
+		memset(messageWithSuffix, 0, (messageLength+15)/8);
+		//displayBytes("messageWithSuffix CLEAN", messageWithSuffix, (messageLength+15)/8);
+		for (i =0; i <= (messageLength+15)/8; i++)
+		{
+			messageWithSuffix[i] = 0x00;
+		}
+	  //displayBytes("messageWithSuffix CLEAN", messageWithSuffix, (messageLength+15)/8);
+		//displayBytes("delimitedSuffix", &delimitedSuffix, 1);
     messageLengthWithSuffix = appendSuffixToMessage(messageWithSuffix, message, messageLength, delimitedSuffix);
     memset(sponge.state, 0, sizeof(sponge.state));
     sponge.squeezing = 0;
@@ -874,8 +886,18 @@ int padding(unsigned char *Msg, unsigned int messageLength, uint32_t *sha3_data)
         delimitedData = messageWithSuffix[messageLengthWithSuffix/8] | (1 << (messageLengthWithSuffix % 8));
         if (delimitedData == 0)
             return 1;
+				    {
+        delimitedData1[0] = delimitedData;
+			  //displayBytes("Block to be absorbed (last few bits + first bit of padding)", delimitedData1, 1);
+				}
 		    AddByte(&sponge, delimitedData, sponge.byteIOIndex);
 		    AddByte(&sponge, 0x80, rateInBytes-1);
+				{
+					unsigned char block[1600/8];
+					memset(block, 0, 1600/8);
+					block[rateInBytes-1] = 0x80;
+					//displayBytes( "Second bit of padding", block, rateInBytes);
+				}
         sponge.byteIOIndex = 0;
         sponge.squeezing = 1;
 				

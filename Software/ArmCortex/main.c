@@ -201,10 +201,15 @@ int main (void)
 			data_rx = XUartLite_RecvByte(STDIN_BASEADDRESS);
 			if (data_rx == 'a') //size
 		  {
-			  size_buffer = get_size();
+				size_buffer = 0;
+				size_buffer = get_size();
+			//size_buffer = 568;
+			//xil_printf("size: %d bits\n", size_buffer);
 			}
 			if (data_rx == 'b') //data
 			{
+				//xil_printf("data for %d bits, cycle %d\n", size_buffer, size_buffer/8);
+				memset(rx_buffer, 0x00, 72);
 				for (index = 0; index < size_buffer/8; index++)
 				{
 					rx_buffer[index] = XUartLite_RecvByte(STDIN_BASEADDRESS);
